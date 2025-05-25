@@ -1,12 +1,10 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
-import 'modern-normalize';
-import 'modern-normalize/modern-normalize.css';
-import App from './components/App/App';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./components/App/App";
+import "./index.css"; // базові стилі, якщо треба
 
-createRoot(document.getElementById('root')as HTMLElement).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
     <App />
-  </StrictMode>
+  </React.StrictMode>
 );

@@ -1,60 +1,158 @@
+// import { useState } from 'react';
+// import { fetchPhotosByQuery } from '../../services/photo';
+// import type { Photo } from '../../types/photo';
+// import Form from '../Form/Form';
+// import Modal from '../Modal/Modal';
+// import Loader from '../Loader/Loader';
+// import Text from '../Test/Test';
+// import PhotosGallery from '../PhotosGallery/PhotosGallery';
+
+// const App = () => {
+//   const [photos, setPhotos] = useState<Photo[]>([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [isError, setIsError] = useState(false);
+//   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+
+//   const handleSearch = async (query: string) => {
+//     if (!query.trim()) return;
+
+//     setIsLoading(true);
+//     setIsError(false);
+
+//     try {
+//       const fetchedPhotos = await fetchPhotosByQuery(query);
+//       setPhotos(fetchedPhotos);
+//     } catch (error) {
+//       console.error(error);
+//       setIsError(true);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const openModal = (photo: Photo) => {
+//     setSelectedPhoto(photo);
+//     document.body.style.overflow = 'hidden';
+//   };
+
+//   const closeModal = () => {
+//     setSelectedPhoto(null);
+//     document.body.style.overflow = '';
+//   };
+
+//   return (
+//     <div>
+//       <Form onSubmit={handleSearch} />
+
+//       {isLoading && <Loader />}
+
+//       {isError && <Text text="Something went wrong. Try again." />}
+
+//       {photos.length > 0 && (
+//         <PhotosGallery photos={photos} onPhotoClick={openModal} />
+//       )}
+
+//       {selectedPhoto && (
+//         <Modal onClose={closeModal}>
+//           <img src={selectedPhoto.src.original} alt={selectedPhoto.alt} />
+//         </Modal>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default App;
+
 import { useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
-import SearchBar from '../SearchBar/SearchBar';
-import MovieGrid from '../MovieGrid/MovieGrid';
-import MovieModal from '../MovieModal/MovieModal';
+import { fetchPhotosByQuery } from '../../services/photo';
+import type { Photo } from '../../types/photo';
+import Form from '../Form/Form';
+import Modal from '../Modal/Modal';
 import Loader from '../Loader/Loader';
-import ErrorMessage from '../ErrorMessage/ErrorMessage';
-import { fetchMovies } from '../../services/movieService';
-import type { Movie } from '../../types/movie';
-import styles from './App.module.css';
+import Text from '../Test/Test';
+import PhotosGallery from '../PhotosGallery/PhotosGallery';
 
-export default function App() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+const App = () => {
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
-  const handleSearch = async (query: string) => {
-    setMovies([]);
-    setError(false);
-    setLoading(true);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+
+  const handleSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
+
+    setIsLoading(true);
+    setIsError(false);
+    setQuery(searchQuery);
+    setPage(1);
+
     try {
-      const results = await fetchMovies(query);
-      if (results.length === 0) {
-        toast.error('No movies found for your request.');
-      }
-      setMovies(results);
-    } catch (err) {
-      console.error(err);
-      setError(true);
+      const fetchedPhotos = await fetchPhotosByQuery(searchQuery, 1);
+      setPhotos(fetchedPhotos);
+    } catch (error) {
+      console.error(error);
+      setIsError(true);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSelectMovie = (movie: Movie) => {
-    setSelectedMovie(movie);
+  const loadMore = async () => {
+    setIsLoading(true);
+    setIsError(false);
+
+    try {
+      const nextPage = page + 1;
+      const fetchedPhotos = await fetchPhotosByQuery(query, nextPage);
+      setPhotos(prev => [...prev, ...fetchedPhotos]);
+      setPage(nextPage);
+    } catch (error) {
+      console.error(error);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCloseModal = () => {
-    setSelectedMovie(null);
+  const openModal = (photo: Photo) => {
+    setSelectedPhoto(photo);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setSelectedPhoto(null);
+    document.body.style.overflow = '';
   };
 
   return (
-    <div className={styles.app}>
-      <SearchBar onSubmit={handleSearch} />
-      <main>
-        {loading && <Loader />}
-        {error && <ErrorMessage />}
-        {!loading && !error && movies.length > 0 && (
-          <MovieGrid movies={movies} onSelect={handleSelectMovie} />
-        )}
-        {selectedMovie && (
-          <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
-        )}
-      </main>
-      <Toaster position="top-right" />
+    <div>
+      <Form onSubmit={handleSearch} />
+
+      {isLoading && <Loader />}
+
+      {isError && <Text text="Something went wrong. Try again." />}
+
+      {photos.length > 0 && (
+        <>
+          <PhotosGallery photos={photos} onPhotoClick={openModal} />
+          {!isLoading && (
+            <button onClick={loadMore} style={{ marginTop: 20 }}>
+              Load More
+            </button>
+          )}
+        </>
+      )}
+
+      {selectedPhoto && (
+        <Modal onClose={closeModal}>
+          <img src={selectedPhoto.src.original} alt={selectedPhoto.alt} />
+        </Modal>
+      )}
     </div>
   );
-}
+};
+
+export default App;
